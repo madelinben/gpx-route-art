@@ -1,0 +1,59 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  font-family: system-ui, sans-serif;
+}
+
+.screen {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+.bar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.bar button,
+.bar a {
+  font-size: 1rem; /* >=16px: no iOS input zoom */
+  padding: 0.6rem 1rem;
+  border: 1px solid #111;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #111;
+  text-decoration: none;
+}
+
+.bar button:disabled {
+  opacity: 0.4;
+}
+
+.canvas-wrap {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
