@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { DrawCanvas } from '../components/DrawCanvas'
 import type { Stroke } from '../canvas/drawing'
 import { textStrokes } from '../canvas/hershey'
+import { STAMPS } from '../canvas/shapes'
 import { buildGpx, canShareFiles, gpxFileName, shareOrDownload } from '../export/gpx'
 import type { LatLon } from '../geo/geo'
 import { frame } from '../geo/geo'
@@ -20,6 +21,10 @@ export const Route = createFileRoute('/')({ component: App })
 const UNIT_M = { km: 1000, mi: 1609.344 }
 const MAX = { km: 25, mi: 15 }
 const MIN_M_PER_VERTEX = 60 // ~one city block of detail per drawing vertex
+const INFLATION = 1.3 // rough preview: routed length ≈ 1.3× drawn length
+const CONFETTI = ['🎉', '⭐', '✨', '🏃', '💥', '🎈', '🌟', '👟']
+
+type Busy = { msg: string; pct?: number }
 
 function App() {
   const [view, setView] = useState<'draw' | 'map'>('draw')
@@ -36,10 +41,11 @@ function App() {
   const [query, setQuery] = useState('')
   const [places, setPlaces] = useState<Place[]>([])
   const [locMsg, setLocMsg] = useState('')
-  const [busy, setBusy] = useState<string | null>(null)
+  const [busy, setBusy] = useState<Busy | null>(null)
   const [error, setError] = useState('')
   const [result, setResult] = useState<RouteResult | null>(null)
   const [canShare, setCanShare] = useState(false)
+  const [party, setParty] = useState(0)
   const worker = useRef<Worker | null>(null)
   const abort = useRef<AbortController | null>(null)
 
@@ -47,9 +53,25 @@ function App() {
   const prep = useMemo(() => prepare(strokes), [strokes])
   const minM = prep ? prep.vertices * MIN_M_PER_VERTEX : 0
 
+  // Real-world meters across the canvas square, for the dot grid: the drawing's widest side
+  // is W meters wide (exact once routed, estimated before) and covers `ext` of the square.
+  const mPerSquare = useMemo(() => {
+    const pts = strokes.flat()
+    const xs = pts.map((p) => p.x)
+    const ys = pts.map((p) => p.y)
+    const ext = pts.length ? Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) : 0
+    const W = result?.widthM ?? targetM / (prep?.unitLen ?? 4) / INFLATION
+    return W / (ext > 0.05 ? ext : 0.8)
+  }, [strokes, prep, targetM, result])
+
   // Any input change makes the shown route stale.
   useEffect(() => setResult(null), [strokes, loc, targetM, tol])
   useEffect(() => setCanShare(canShareFiles()), [])
+  useEffect(() => {
+    if (!party) return
+    const t = setTimeout(() => setParty(0), 2400)
+    return () => clearTimeout(t)
+  }, [party])
   // Keyboard-aware height: iOS doesn't shrink dvh when the keyboard opens.
   useEffect(() => {
     const vv = window.visualViewport
@@ -62,8 +84,8 @@ function App() {
 
   const preview = useMemo(() => {
     if (!prep || !loc) return null
-    const W = targetM / prep.unitLen / 1.3 // rough: routed length is ~1.3× the drawn length
     const f = frame(loc.ll[0], loc.ll[1])
+    const W = targetM / prep.unitLen / INFLATION
     return place(prep.strokes, W, 0, [0, 0]).map((s) => s.map((p) => f.toLatLon(p)))
   }, [prep, loc, targetM])
 
@@ -77,7 +99,7 @@ function App() {
     return {
       xml: buildGpx({
         name,
-        desc: `Target ${(targetM / 1000).toFixed(1)} km ±${tol * 100}%. Actual ${km.toFixed(1)} km (drawing ${(result.drawingM / 1000).toFixed(1)} km, transit ${(result.transitM / 1000).toFixed(1)} km). Map data © OpenStreetMap contributors.`,
+        desc: `Target ${(targetM / 1000).toFixed(1)} km ±${Math.round(tol * 100)}%. Actual ${km.toFixed(1)} km (drawing ${(result.drawingM / 1000).toFixed(1)} km, transit ${(result.transitM / 1000).toFixed(1)} km). Map data © OpenStreetMap contributors.`,
         pts,
         kind,
       }),
@@ -92,6 +114,8 @@ function App() {
       (p) => {
         setLoc({ ll: [p.coords.latitude, p.coords.longitude], label: 'My location' })
         setLocMsg('')
+        setSheet(false)
+        setView('map')
       },
       () => setLocMsg('Location blocked — search for a place or tap the map instead.'),
       { enableHighAccuracy: true, timeout: 15_000 },
@@ -125,16 +149,16 @@ function App() {
     const ctl = new AbortController()
     abort.current = ctl
     try {
-      setBusy('Loading streets…')
+      setBusy({ msg: 'Loading streets…' })
       // Drawing can't be wider than D / unitLen; allow for rotation, offsets and a margin.
       const half = Math.min(20_000, 0.75 * (targetM / prep.unitLen) + 400)
       const elements = await fetchElements(bboxAround(loc.ll, half), ctl.signal)
-      setBusy('Fitting route…')
+      setBusy({ msg: 'Fitting route…', pct: 0 })
       const w = new Worker(new URL('../worker/routeWorker.ts', import.meta.url), { type: 'module' })
       worker.current = w
       w.onmessage = (ev: MessageEvent<WorkerOut>) => {
         const m = ev.data
-        if (m.type === 'progress') setBusy(`Fitting route… ${m.done}/${m.total}`)
+        if (m.type === 'progress') setBusy({ msg: 'Fitting route…', pct: m.done / m.total })
         else if (m.type === 'best') setResult(m.result)
         else {
           w.terminate()
@@ -144,6 +168,7 @@ function App() {
           else if (m.result) {
             setResult(m.result)
             setView('map')
+            setParty((n) => n + 1)
           } else setError('Could not fit the drawing here. Try another spot, a bigger distance, or a simpler shape.')
         }
       }
@@ -160,12 +185,11 @@ function App() {
   }
 
   const km = (m: number) => (m / UNIT_M[unit]).toFixed(1)
-  const ready = !!prep && !!loc
-  const hint = !prep ? 'Draw something' : !loc ? 'Set a location (⚙)' : ''
+  const stars = result ? Math.max(1, Math.round(result.score / 20)) : 0
 
   return (
     <div className="screen">
-      <header className="bar">
+      <header className="top">
         <div className="seg" role="group" aria-label="View">
           <button aria-pressed={view === 'draw'} onClick={() => setView('draw')}>
             ✏️ Draw
@@ -174,7 +198,7 @@ function App() {
             🗺️ Map
           </button>
         </div>
-        <button aria-pressed={sheet} onClick={() => setSheet(!sheet)} aria-label="Settings">
+        <button className="btn" aria-pressed={sheet} onClick={() => setSheet(!sheet)}>
           ⚙️ Settings
         </button>
       </header>
@@ -182,7 +206,7 @@ function App() {
       <div className="stage">
         {view === 'draw' ? (
           <div className="draw">
-            <div className="bar">
+            <div className="tools">
               <input
                 className="text"
                 value={text}
@@ -192,29 +216,56 @@ function App() {
                 onChange={(e) => setText(e.target.value.toUpperCase())}
               />
               <button
+                className="btn sm"
                 disabled={!text.trim()}
                 onClick={() => {
                   setStrokes(textStrokes(text))
                   setShape(text.trim())
                 }}
               >
-                Write
-              </button>
-              <button disabled={!strokes.length} onClick={() => setStrokes(strokes.slice(0, -1))}>
-                Undo
+                ✨ Write
               </button>
               <button
+                className="btn sm"
+                aria-label="Undo"
+                title="Undo"
+                disabled={!strokes.length}
+                onClick={() => setStrokes(strokes.slice(0, -1))}
+              >
+                ↩
+              </button>
+              <button
+                className="btn sm"
+                aria-label="Clear"
+                title="Clear"
                 disabled={!strokes.length}
                 onClick={() => {
                   setStrokes([])
                   setShape('drawing')
                 }}
               >
-                Clear
+                🗑
               </button>
+            </div>
+            <div className="stamps" aria-label="Shape stamps">
+              {STAMPS.map((s) => (
+                <button
+                  key={s.id}
+                  className="stamp"
+                  aria-label={`${s.label} stamp`}
+                  title={s.label}
+                  onClick={() => {
+                    setStrokes(s.strokes())
+                    setShape(s.id)
+                  }}
+                >
+                  {s.emoji}
+                </button>
+              ))}
             </div>
             <DrawCanvas
               strokes={strokes}
+              mPerSquare={mPerSquare}
               onChange={(s) => {
                 setStrokes(s)
                 setShape('drawing')
@@ -232,150 +283,198 @@ function App() {
           </Suspense>
         )}
 
+        {view === 'map' && !loc && !sheet && <div className="tip">👆 Tap the map to drop a pin, or open ⚙️ Settings</div>}
+
         {sheet && (
           <section className="sheet">
-            <h2>Location</h2>
-            <button onClick={useMyLocation}>📍 Use my location</button>
-            <form className="row" onSubmit={search}>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search a place"
-                aria-label="Search a place"
-              />
-              <button>Search</button>
-            </form>
-            {locMsg && <p className="muted">{locMsg}</p>}
-            <ul className="places">
-              {places.map((p) => (
-                <li key={`${p.lat},${p.lon}`}>
-                  <button
-                    onClick={() => {
-                      setLoc({ ll: [p.lat, p.lon], label: p.name })
-                      setPlaces([])
-                      setView('map')
-                      setSheet(false)
-                    }}
-                  >
-                    {p.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p className="muted">
-              {loc ? `📌 ${loc.label} (${loc.ll[0].toFixed(4)}, ${loc.ll[1].toFixed(4)})` : 'No location yet.'} You can also tap the
-              map to drop a pin.
-            </p>
+            <div className="sheet-head">
+              <h1>GPS Art</h1>
+              <button className="btn sm" onClick={() => setSheet(false)}>
+                ✕ Done
+              </button>
+            </div>
 
-            <h2>Distance</h2>
-            <div className="row">
+            <div className="card">
+              <h2>📍 Where?</h2>
+              <button className="btn blue" onClick={useMyLocation}>
+                Use my location
+              </button>
+              <form className="row" onSubmit={search}>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search a place"
+                  aria-label="Search a place"
+                />
+                <button className="btn">Go</button>
+              </form>
+              {locMsg && <p className="muted">{locMsg}</p>}
+              <ul className="places">
+                {places.map((p) => (
+                  <li key={`${p.lat},${p.lon}`}>
+                    <button
+                      className="btn"
+                      onClick={() => {
+                        setLoc({ ll: [p.lat, p.lon], label: p.name })
+                        setPlaces([])
+                        setView('map')
+                        setSheet(false)
+                      }}
+                    >
+                      {p.name}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <p className="muted">
+                {loc ? `📌 ${loc.label} (${loc.ll[0].toFixed(4)}, ${loc.ll[1].toFixed(4)})` : 'No spot picked yet.'} You can also tap
+                the map to drop a pin.
+              </p>
+            </div>
+
+            <div className="card">
+              <h2>📏 How far?</h2>
+              <div className="big">
+                {dist} <small>{unit}</small>
+              </div>
               <input
-                type="number"
+                type="range"
                 min={1}
                 max={MAX[unit]}
                 step={0.5}
                 value={dist}
-                aria-label="Target distance"
-                onChange={(e) => setDist(Math.min(MAX[unit], Math.max(0, +e.target.value)))}
+                aria-label="Target distance slider"
+                onChange={(e) => setDist(+e.target.value)}
               />
-              <select
-                value={unit}
-                aria-label="Unit"
-                onChange={(e) => {
-                  const u = e.target.value as 'km' | 'mi'
-                  setDist(+((dist * UNIT_M[unit]) / UNIT_M[u]).toFixed(1))
-                  setUnit(u)
-                }}
-              >
-                <option value="km">km</option>
-                <option value="mi">mi</option>
-              </select>
-              <select value={tol} aria-label="Tolerance" onChange={(e) => setTol(+e.target.value)}>
-                <option value={0.05}>±5%</option>
-                <option value={0.1}>±10%</option>
-                <option value={0.2}>±20%</option>
-              </select>
+              <div className="row">
+                <input
+                  type="number"
+                  min={1}
+                  max={MAX[unit]}
+                  step={0.5}
+                  value={dist}
+                  aria-label="Target distance"
+                  onChange={(e) => setDist(Math.min(MAX[unit], Math.max(0, +e.target.value)))}
+                />
+                <select
+                  value={unit}
+                  aria-label="Unit"
+                  onChange={(e) => {
+                    const u = e.target.value as 'km' | 'mi'
+                    setDist(+((dist * UNIT_M[unit]) / UNIT_M[u]).toFixed(1))
+                    setUnit(u)
+                  }}
+                >
+                  <option value="km">km</option>
+                  <option value="mi">mi</option>
+                </select>
+                <select value={tol} aria-label="Tolerance" onChange={(e) => setTol(+e.target.value)}>
+                  <option value={0.05}>±5%</option>
+                  <option value={0.1}>±10%</option>
+                  <option value={0.2}>±20%</option>
+                </select>
+              </div>
+              <label className="row">
+                Pace (min/{unit})
+                <input type="number" min={2} max={20} step={0.1} value={pace} onChange={(e) => setPace(+e.target.value)} />
+              </label>
+              {minM > targetM && (
+                <p className="warn">
+                  🤏 That&apos;s a lot of detail for {dist} {unit}. Try ≥ {km(minM)} {unit} or a simpler shape.
+                </p>
+              )}
             </div>
-            <input
-              type="range"
-              min={1}
-              max={MAX[unit]}
-              step={0.5}
-              value={dist}
-              aria-label="Target distance slider"
-              onChange={(e) => setDist(+e.target.value)}
-            />
-            <label className="row">
-              Pace (min/{unit})
-              <input type="number" min={2} max={20} step={0.1} value={pace} onChange={(e) => setPace(+e.target.value)} />
-            </label>
-            {minM > targetM && (
-              <p className="warn">
-                This drawing has a lot of detail for {dist} {unit}. Try ≥ {km(minM)} {unit} or a simpler shape.
-              </p>
-            )}
 
-            <h2>Export</h2>
-            <label className="row">
-              GPX type
-              <select value={kind} onChange={(e) => setKind(e.target.value as 'trk' | 'rte')}>
-                <option value="trk">Track (&lt;trk&gt;) — default</option>
-                <option value="rte">Route (&lt;rte&gt;)</option>
-              </select>
-            </label>
-            <details open={!!result}>
-              <summary>How to load on your watch</summary>
-              <ul>
-                <li>
-                  <b>COROS:</b> COROS app → Profile → Import Data → Import Route (GPX), then sync to the watch (Navigation → Routes).
-                </li>
-                <li>
-                  <b>Garmin:</b> import as a course in Garmin Connect, then send to device.
-                </li>
-                <li>
-                  <b>Suunto / Polar:</b> import via the companion app&apos;s route import, then sync.
-                </li>
-                <li>
-                  <b>Apple Watch / Wear OS:</b> use a GPX-capable nav app (e.g. WorkOutDoors).
-                </li>
-                <li>
-                  <b>Strava:</b> import the GPX as a route.
-                </li>
-              </ul>
-            </details>
-            <p className="muted">
-              Routes are auto-generated: obey traffic laws and check paths are safe and accessible. Map data © OpenStreetMap contributors.
+            <div className="card">
+              <h2>⌚ Export</h2>
+              <label className="row">
+                GPX type
+                <select value={kind} onChange={(e) => setKind(e.target.value as 'trk' | 'rte')}>
+                  <option value="trk">Track (&lt;trk&gt;) — default</option>
+                  <option value="rte">Route (&lt;rte&gt;)</option>
+                </select>
+              </label>
+              <details open={!!result}>
+                <summary>How to load on your watch</summary>
+                <ul>
+                  <li>
+                    <b>COROS:</b> COROS app → Profile → Import Data → Import Route (GPX), then sync to the watch (Navigation →
+                    Routes).
+                  </li>
+                  <li>
+                    <b>Garmin:</b> import as a course in Garmin Connect, then send to device.
+                  </li>
+                  <li>
+                    <b>Suunto / Polar:</b> import via the companion app&apos;s route import, then sync.
+                  </li>
+                  <li>
+                    <b>Apple Watch / Wear OS:</b> use a GPX-capable nav app (e.g. WorkOutDoors).
+                  </li>
+                  <li>
+                    <b>Strava:</b> import the GPX as a route.
+                  </li>
+                </ul>
+              </details>
+            </div>
+            <p className="muted fine">
+              Routes are auto-generated: obey traffic laws and check paths are safe and accessible. Map data © OpenStreetMap
+              contributors.
             </p>
           </section>
+        )}
+
+        {party > 0 && (
+          <div className="confetti" key={party} aria-hidden="true">
+            {Array.from({ length: 16 }, (_, i) => (
+              <span
+                key={i}
+                style={{ '--x': `${(i * 37) % 100}%`, '--d': `${(i % 5) * 0.08}s`, '--r': `${(i * 53) % 360}deg` } as React.CSSProperties}
+              >
+                {CONFETTI[i % CONFETTI.length]}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
       <footer className="foot">
-        {error && <p className="warn">{error}</p>}
+        {error && <p className="warn">⚠️ {error}</p>}
         {result && !busy && (
-          <p className="stats">
-            <b>
-              {km(result.lengthM)} {unit}
-            </b>{' '}
-            (target {dist} {unit} ±{tol * 100}%) · score {result.score} · ~{Math.round((result.lengthM / UNIT_M[unit]) * pace)} min
-            <br />
-            <span className="muted">
-              drawing {km(result.drawingM)} · transit {km(result.transitM)} · shape {Math.round(result.fidelity * 100)}% · distance{' '}
-              {Math.round(result.distFit * 100)}%
-            </span>
-            {!result.withinTol && <span className="warn"> Outside tolerance — adjust distance or tolerance.</span>}
-          </p>
+          <div className="stats">
+            <div className="stats-top">
+              <span className="big">
+                {km(result.lengthM)} <small>{unit}</small>
+              </span>
+              <span className="stars" aria-label={`${stars} of 5 stars`}>
+                {'★'.repeat(stars)}
+                <span className="dim">{'★'.repeat(5 - stars)}</span>
+              </span>
+              <span className="muted">~{Math.round((result.lengthM / UNIT_M[unit]) * pace)} min</span>
+            </div>
+            <div className="chips">
+              <span className="chip">🎯 target {dist} {unit} ±{Math.round(tol * 100)}%</span>
+              <span className="chip">✏️ drawing {km(result.drawingM)}</span>
+              <span className="chip">🚶 transit {km(result.transitM)}</span>
+              <span className="chip">🔷 shape {Math.round(result.fidelity * 100)}%</span>
+            </div>
+            {!result.withinTol && <p className="warn">Outside tolerance — adjust distance or tolerance.</p>}
+          </div>
         )}
-        <div className="bar">
+        <div className="actions">
           {busy ? (
             <>
-              <span className="grow">{busy}</span>
-              <button onClick={cancel}>Cancel</button>
+              <div className="progress" role="progressbar" aria-label={busy.msg}>
+                <div className="bar-fill" style={{ width: `${Math.round((busy.pct ?? 0.08) * 100)}%` }} />
+                <span>{busy.msg}</span>
+              </div>
+              <button className="btn" onClick={cancel}>
+                Cancel
+              </button>
             </>
           ) : result && gpx ? (
             <>
               <button
-                className="primary"
+                className="btn blue grow"
                 onClick={() => {
                   shareOrDownload(gpx.xml, gpx.file, gpx.name, false)
                   setSheet(true)
@@ -384,17 +483,22 @@ function App() {
                 ⬇ Download GPX
               </button>
               {canShare && (
-                <button onClick={() => shareOrDownload(gpx.xml, gpx.file, gpx.name, true)}>Send to watch app</button>
+                <button className="btn" onClick={() => shareOrDownload(gpx.xml, gpx.file, gpx.name, true)}>
+                  ⌚ Send
+                </button>
               )}
-              <button onClick={() => void generate()}>Redo</button>
+              <button className="btn" onClick={() => void generate()}>
+                🔁 Redo
+              </button>
             </>
           ) : (
-            <>
-              <button className="primary" disabled={!ready} onClick={() => void generate()}>
-                Generate route
-              </button>
-              {hint && <span className="muted">{hint}</span>}
-            </>
+            <button
+              className={`btn green grow ${prep && loc ? 'pulse' : ''}`}
+              disabled={!prep}
+              onClick={() => (loc ? void generate() : setSheet(true))}
+            >
+              {!prep ? '✏️ Draw something first' : !loc ? '📍 Choose a spot' : '🚀 Generate route'}
+            </button>
           )}
         </div>
       </footer>

@@ -4,6 +4,9 @@ Mobile-first single-page app: draw a shape or type a word, pick a location and d
 and it routes the drawing onto real streets (OpenStreetMap via Overpass) and exports a GPX
 for a watch (COROS Pace Pro). Built with TanStack Start (static SPA) + Leaflet.
 
+The canvas has a dotted grid scaled to your target distance (dots ≈ 100 m, rings ≈ 1 km)
+and one-tap shape stamps (heart, star, …).
+
 Flow: **Draw** tab (canvas / word) → ⚙ Settings (location, distance, tolerance) → Generate →
 **Map** tab (route, score) → Download GPX. Routing runs in a Web Worker
 (`src/routing`, `src/worker`).
