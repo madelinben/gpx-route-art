@@ -95,7 +95,18 @@ function App() {
       }
     }
     window.addEventListener('vite:preloadError', onErr)
-    return () => window.removeEventListener('vite:preloadError', onErr)
+    // loaded fine: re-arm the one-shot reload for the next deploy
+    const rearm = setTimeout(() => {
+      try {
+        sessionStorage.removeItem('preload-reloaded')
+      } catch {
+        /* ignore */
+      }
+    }, 10_000)
+    return () => {
+      window.removeEventListener('vite:preloadError', onErr)
+      clearTimeout(rearm)
+    }
   }, [])
   // Keyboard-aware height: iOS doesn't shrink dvh when the keyboard opens.
   useEffect(() => {
