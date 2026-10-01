@@ -13,7 +13,7 @@ body {
 
 .screen {
   height: 100vh;
-  height: 100dvh;
+  height: var(--app-h, 100dvh);
   display: grid;
   grid-template-rows: auto 1fr auto;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
@@ -56,4 +56,158 @@ canvas {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.draw {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.draw > .canvas-wrap {
+  min-height: 0;
+}
+
+.map {
+  z-index: 0;
+}
+
+.center {
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.bar {
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.bar .grow {
+  flex: 1;
+}
+
+.bar input,
+.sheet input,
+.sheet select {
+  font-size: 1rem; /* >=16px: no iOS auto-zoom */
+  padding: 0.5rem;
+  border: 1px solid #999;
+  border-radius: 0.5rem;
+  min-width: 0;
+}
+
+.bar .text {
+  width: 7.5rem;
+  text-transform: uppercase;
+}
+
+.seg {
+  display: flex;
+}
+
+.seg button {
+  border-radius: 0;
+}
+
+.seg button:first-child {
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.seg button:last-child {
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+button[aria-pressed='true'],
+.primary {
+  background: #111 !important;
+  color: #fff !important;
+}
+
+.bar button,
+.sheet button {
+  font-size: 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #111;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #111;
+}
+
+button:disabled {
+  opacity: 0.4;
+}
+
+.sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 1000; /* above Leaflet panes */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #fff;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sheet h2 {
+  margin: 0.5rem 0 0;
+  font-size: 1.1rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.row input:not([type='range']) {
+  flex: 1;
+}
+
+.places {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.places button {
+  width: 100%;
+  text-align: left;
+}
+
+.muted {
+  color: #666;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.warn {
+  color: #b45309;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.foot {
+  padding: 0 0.5rem;
+}
+
+.stats {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.foot .bar {
+  padding: 0.5rem 0;
+  justify-content: flex-start;
 }

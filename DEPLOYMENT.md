@@ -41,6 +41,12 @@ pnpm preview   # http://localhost:4173/gpx-route-art/
   load the SPA on refresh.
 - The pnpm version comes from `packageManager` in `package.json`.
 
+## Optional build-time config
+
+`VITE_OVERPASS_URL`, `VITE_NOMINATIM_URL` and `VITE_TILE_URL` override the public OSM
+endpoints (defaults need no setup). Set them as repository **variables** (not secrets) and
+pass them via `env:` on the workflow's build step. They end up in the public bundle.
+
 ## Secrets
 
 The app needs **none**: Overpass, Nominatim and OSM tiles are keyless, and Pages deploys
