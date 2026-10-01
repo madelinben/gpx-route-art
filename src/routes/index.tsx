@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { DrawCanvas } from '../components/DrawCanvas'
+import { LoadBoundary } from '../components/LoadBoundary'
 import type { Stroke } from '../canvas/drawing'
 import { textStrokes } from '../canvas/hershey'
 import { STAMPS } from '../canvas/shapes'
@@ -80,6 +81,22 @@ function App() {
     const t = setTimeout(() => setParty(0), 2400)
     return () => clearTimeout(t)
   }, [party])
+  // A lazy chunk/CSS that fails to load (flaky network, or a redeploy replaced the hashed files):
+  // reload once to pick up the fresh index; the boundary shows a Reload button if it still fails.
+  useEffect(() => {
+    const onErr = (e: Event) => {
+      try {
+        if (sessionStorage.getItem('preload-reloaded')) return
+        sessionStorage.setItem('preload-reloaded', '1')
+        e.preventDefault()
+        location.reload()
+      } catch {
+        /* storage blocked: fall through to the boundary */
+      }
+    }
+    window.addEventListener('vite:preloadError', onErr)
+    return () => window.removeEventListener('vite:preloadError', onErr)
+  }, [])
   // Keyboard-aware height: iOS doesn't shrink dvh when the keyboard opens.
   useEffect(() => {
     const vv = window.visualViewport
@@ -290,16 +307,18 @@ function App() {
             />
           </div>
         ) : (
-          <Suspense fallback={<div className="center">Loading map…</div>}>
-            <MapView
-              pin={loc?.ll ?? null}
-              onPin={(ll) => setLoc({ ll, label: 'Dropped pin' })}
-              preview={preview}
-              result={result}
-              area={area}
-              bottomPad={variations.length && varsOpen ? 150 : 0}
-            />
-          </Suspense>
+          <LoadBoundary>
+            <Suspense fallback={<div className="center">Loading map…</div>}>
+              <MapView
+                pin={loc?.ll ?? null}
+                onPin={(ll) => setLoc({ ll, label: 'Dropped pin' })}
+                preview={preview}
+                result={result}
+                area={area}
+                bottomPad={variations.length && varsOpen ? 150 : 0}
+              />
+            </Suspense>
+          </LoadBoundary>
         )}
 
         {view === 'map' && !loc && !sheet && <div className="tip">👆 Tap the map to drop a pin, or open ⚙️ Settings</div>}
