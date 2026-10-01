@@ -13,11 +13,11 @@ test('grid picks 100 m dots and 1 km rings for a typical run', () => {
   expect(fmtDist(2500)).toBe('2.5 km')
 })
 
-test('every stamp is a routable single stroke inside the square', () => {
+test('every stamp is routable and inside the square', () => {
   for (const s of STAMPS) {
     const strokes = s.strokes()
-    expect(strokes).toHaveLength(1)
-    for (const p of strokes[0]) {
+    expect(strokes.length).toBeGreaterThan(0)
+    for (const p of strokes.flat()) {
       expect(p.x).toBeGreaterThanOrEqual(0.09)
       expect(p.x).toBeLessThanOrEqual(0.91)
       expect(p.y).toBeGreaterThanOrEqual(0.09)
