@@ -56,56 +56,6 @@ export type RouteOpts = {
   buffer?: number
 }
 
-/**
- * A* with cost = length × (1 + α·deviation/spacing). Cost ≥ length ≥ euclid,
- * so the euclidean heuristic stays admissible.
- */
-export function route(g: Graph, from: number, to: number, o: RouteOpts): number[] | null {
-  if (from === to) return [from]
-  const gen = ++g.gen
-  const tx = g.xy[2 * to]
-  const ty = g.xy[2 * to + 1]
-  const h = (n: number) => Math.hypot(g.xy[2 * n] - tx, g.xy[2 * n + 1] - ty)
-  const heap = new Heap()
-  g.stamp[from] = gen
-  g.gScore[from] = 0
-  g.prev[from] = -1
-  heap.push(h(from), from)
-  const closed = new Set<number>()
-  while (heap.size) {
-    const u = heap.pop()
-    if (u === to) {
-      const path = [u]
-      while (g.prev[path[path.length - 1]] !== -1) path.push(g.prev[path[path.length - 1]])
-      return path.reverse()
-    }
-    if (closed.has(u)) continue
-    closed.add(u)
-    const ux = g.xy[2 * u]
-    const uy = g.xy[2 * u + 1]
-    for (const { to: v, w } of g.adj[u]) {
-      const vx = g.xy[2 * v]
-      const vy = g.xy[2 * v + 1]
-      let cost = w
-      if (o.seg) {
-        if (o.buffer !== undefined && distToSeg([vx, vy], o.seg[0], o.seg[1]) > o.buffer) continue
-        if (o.alpha > 0) {
-          const dev = distToSeg([(ux + vx) / 2, (uy + vy) / 2], o.seg[0], o.seg[1])
-          cost = w * (1 + (o.alpha * dev) / o.spacing)
-        }
-      }
-      const ng = g.gScore[u] + cost
-      if (g.stamp[v] !== gen || ng < g.gScore[v]) {
-        g.stamp[v] = gen
-        g.gScore[v] = ng
-        g.prev[v] = u
-        heap.push(ng + h(v), v)
-      }
-    }
-  }
-  return null
-}
-
 export type Target = { n: number; pen: number }
 
 /**
@@ -136,7 +86,9 @@ export function routeToAny(g: Graph, from: number, targets: Target[], o: RouteOp
     }
     const ux = g.xy[2 * u]
     const uy = g.xy[2 * u + 1]
-    for (const { to: v, w } of g.adj[u]) {
+    for (let e = g.off[u]; e < g.off[u + 1]; e++) {
+      const v = g.to[e]
+      const w = g.w[e]
       const vx = g.xy[2 * v]
       const vy = g.xy[2 * v + 1]
       let cost = w

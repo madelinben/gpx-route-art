@@ -7,12 +7,13 @@ import { STAMPS } from '../canvas/shapes'
 import { buildGpx, canShareFiles, gpxFileName, shareOrDownload } from '../export/gpx'
 import type { LatLon } from '../geo/geo'
 import { frame } from '../geo/geo'
-import { bboxAround, fetchElements } from '../osm/overpass'
 import { searchPlaces } from '../osm/nominatim'
 import type { Place } from '../osm/nominatim'
 import { place, prepare } from '../routing/pipeline'
 import type { RouteResult } from '../routing/solve'
-import type { WorkerOut } from '../worker/routeWorker'
+import type { WorkerIn, WorkerOut } from '../worker/routeWorker'
+import { rank, Variations } from '../components/Variations'
+import type { MetricId } from '../components/Variations'
 
 const MapView = lazy(() => import('../components/MapView'))
 
@@ -46,8 +47,12 @@ function App() {
   const [result, setResult] = useState<RouteResult | null>(null)
   const [canShare, setCanShare] = useState(false)
   const [party, setParty] = useState(0)
+  const [areaKm, setAreaKm] = useState(10)
+  const [variations, setVariations] = useState<RouteResult[]>([])
+  const [metric, setMetric] = useState<MetricId>('score')
+  const [varsOpen, setVarsOpen] = useState(true)
+  const [note, setNote] = useState('')
   const worker = useRef<Worker | null>(null)
-  const abort = useRef<AbortController | null>(null)
 
   const targetM = dist * UNIT_M[unit]
   const prep = useMemo(() => prepare(strokes), [strokes])
@@ -65,7 +70,10 @@ function App() {
   }, [strokes, prep, targetM, result])
 
   // Any input change makes the shown route stale.
-  useEffect(() => setResult(null), [strokes, loc, targetM, tol])
+  useEffect(() => {
+    setResult(null)
+    setVariations([])
+  }, [strokes, loc, targetM, tol, areaKm])
   useEffect(() => setCanShare(canShareFiles()), [])
   useEffect(() => {
     if (!party) return
@@ -88,6 +96,13 @@ function App() {
     const W = targetM / prep.unitLen / INFLATION
     return place(prep.strokes, W, 0, [0, 0]).map((s) => s.map((p) => f.toLatLon(p)))
   }, [prep, loc, targetM])
+
+  const area = useMemo((): [LatLon, LatLon] | null => {
+    if (!loc) return null
+    const f = frame(loc.ll[0], loc.ll[1])
+    const h = (areaKm * 1000) / 2
+    return [f.toLatLon([-h, -h]), f.toLatLon([h, h])]
+  }, [loc, areaKm])
 
   const gpx = useMemo(() => {
     if (!result) return null
@@ -136,52 +151,54 @@ function App() {
   }
 
   function cancel() {
-    abort.current?.abort()
-    worker.current?.terminate()
+    worker.current?.terminate() // also drops the tile cache; fine for an explicit cancel
     worker.current = null
     setBusy(null)
   }
 
-  async function generate() {
+  function showList(list: RouteResult[], m: MetricId) {
+    setVariations(list)
+    setResult(rank(list, m)[0] ?? null)
+  }
+
+  function generate() {
     if (!prep || !loc) return
     setError('')
+    setNote('')
     setResult(null)
-    const ctl = new AbortController()
-    abort.current = ctl
-    try {
-      setBusy({ msg: 'Loading streets…' })
-      // Drawing can't be wider than D / unitLen; allow for rotation, offsets and a margin.
-      const half = Math.min(20_000, 0.75 * (targetM / prep.unitLen) + 400)
-      const elements = await fetchElements(bboxAround(loc.ll, half), ctl.signal)
-      setBusy({ msg: 'Fitting route…', pct: 0 })
-      const w = new Worker(new URL('../worker/routeWorker.ts', import.meta.url), { type: 'module' })
-      worker.current = w
-      w.onmessage = (ev: MessageEvent<WorkerOut>) => {
-        const m = ev.data
-        if (m.type === 'progress') setBusy({ msg: 'Fitting route…', pct: m.done / m.total })
-        else if (m.type === 'best') setResult(m.result)
-        else {
-          w.terminate()
-          worker.current = null
-          setBusy(null)
-          if (m.type === 'error') setError(m.message)
-          else if (m.result) {
-            setResult(m.result)
-            setView('map')
-            setParty((n) => n + 1)
-          } else setError('Could not fit the drawing here. Try another spot, a bigger distance, or a simpler shape.')
-        }
-      }
-      w.onerror = () => {
-        w.terminate()
+    setVariations([])
+    setBusy({ msg: 'Starting…' })
+    // One worker for the whole session so downloaded map tiles stay cached between searches.
+    const w = (worker.current ??= new Worker(new URL('../worker/routeWorker.ts', import.meta.url), { type: 'module' }))
+    let first = true
+    w.onmessage = (ev: MessageEvent<WorkerOut>) => {
+      const m = ev.data
+      if (m.type === 'progress') {
+        const msg = { tiles: 'Loading map tiles…', build: 'Building street map…', search: 'Searching the area…' }[m.phase]
+        setBusy({ msg: `${msg} ${m.phase === 'build' ? '' : `${m.done}/${m.total}`}`, pct: m.phase === 'build' ? 1 : m.done / m.total })
+      } else if (m.type === 'partial') {
+        showList(m.list, metric)
+        if (first) (setView('map'), (first = false))
+      } else {
         setBusy(null)
-        setError('Routing failed unexpectedly.')
+        if (m.type === 'error') setError(m.message)
+        else if (m.list.length) {
+          showList(m.list, metric)
+          setView('map')
+          setParty((n) => n + 1)
+          if (m.warning) setNote(m.warning)
+        } else
+          setError(`No spot in the area gave a route within ±${Math.round(tol * 100)}% of ${dist} ${unit}. Try a wider tolerance, another distance, or a simpler shape.`)
       }
-      w.postMessage({ elements, strokes, center: loc.ll, targetM, tol })
-    } catch (err) {
-      setBusy(null)
-      if (!ctl.signal.aborted) setError(err instanceof Error ? err.message : 'Something went wrong.')
     }
+    w.onerror = () => {
+      worker.current?.terminate()
+      worker.current = null
+      setBusy(null)
+      setError('Routing failed unexpectedly.')
+    }
+    const msg: WorkerIn = { strokes, center: loc.ll, targetM, tol, areaM: areaKm * 1000 }
+    w.postMessage(msg)
   }
 
   const km = (m: number) => (m / UNIT_M[unit]).toFixed(1)
@@ -279,11 +296,28 @@ function App() {
               onPin={(ll) => setLoc({ ll, label: 'Dropped pin' })}
               preview={preview}
               result={result}
+              area={area}
+              bottomPad={variations.length && varsOpen ? 150 : 0}
             />
           </Suspense>
         )}
 
         {view === 'map' && !loc && !sheet && <div className="tip">👆 Tap the map to drop a pin, or open ⚙️ Settings</div>}
+
+        {view === 'map' && variations.length > 0 && !sheet && (
+          <Variations
+            list={variations}
+            metric={metric}
+            onMetric={(id) => {
+              setMetric(id)
+              setResult(rank(variations, id)[0])
+            }}
+            selected={result}
+            onSelect={setResult}
+            open={varsOpen}
+            onToggle={() => setVarsOpen(!varsOpen)}
+          />
+        )}
 
         {sheet && (
           <section className="sheet">
@@ -375,6 +409,14 @@ function App() {
                 </select>
               </div>
               <label className="row">
+                Search area
+                <select value={areaKm} onChange={(e) => setAreaKm(+e.target.value)}>
+                  <option value={3}>3 × 3 km (fast)</option>
+                  <option value={6}>6 × 6 km</option>
+                  <option value={10}>10 × 10 km (best shapes, slower first time)</option>
+                </select>
+              </label>
+              <label className="row">
                 Pace (min/{unit})
                 <input type="number" min={2} max={20} step={0.1} value={pace} onChange={(e) => setPace(+e.target.value)} />
               </label>
@@ -439,6 +481,7 @@ function App() {
 
       <footer className="foot">
         {error && <p className="warn">⚠️ {error}</p>}
+        {note && <p className="warn">ℹ️ {note}</p>}
         {result && !busy && (
           <div className="stats">
             <div className="stats-top">
@@ -456,6 +499,7 @@ function App() {
               <span className="chip">✏️ drawing {km(result.drawingM)}</span>
               <span className="chip">🚶 transit {km(result.transitM)}</span>
               <span className="chip">🔷 shape {Math.round(result.fidelity * 100)}%</span>
+              <span className="chip">🧼 clean {Math.round(result.clean * 100)}%</span>
             </div>
             {!result.withinTol && <p className="warn">Outside tolerance — adjust distance or tolerance.</p>}
           </div>
@@ -487,7 +531,7 @@ function App() {
                   ⌚ Send
                 </button>
               )}
-              <button className="btn" onClick={() => void generate()}>
+              <button className="btn" onClick={generate}>
                 🔁 Redo
               </button>
             </>
@@ -495,9 +539,9 @@ function App() {
             <button
               className={`btn green grow ${prep && loc ? 'pulse' : ''}`}
               disabled={!prep}
-              onClick={() => (loc ? void generate() : setSheet(true))}
+              onClick={() => (loc ? generate() : setSheet(true))}
             >
-              {!prep ? '✏️ Draw something first' : !loc ? '📍 Choose a spot' : '🚀 Generate route'}
+              {!prep ? '✏️ Draw something first' : !loc ? '📍 Choose a spot' : '🚀 Find best spots'}
             </button>
           )}
         </div>

@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useEffect, useMemo } from 'react'
-import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet'
+import { CircleMarker, MapContainer, Marker, Polyline, Rectangle, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import type { LatLon } from '../geo/geo'
 import type { RouteResult } from '../routing/solve'
 
@@ -14,7 +14,17 @@ const PIN = emoji('📍', [15, 28])
 const START = emoji('🏁', [4, 26])
 const FINISH = emoji('🏆', [15, 26])
 
-function Fit({ pin, preview, result }: { pin: LatLon | null; preview: LatLon[][] | null; result: RouteResult | null }) {
+function Fit({
+  pin,
+  preview,
+  result,
+  bottomPad,
+}: {
+  pin: LatLon | null
+  preview: LatLon[][] | null
+  result: RouteResult | null
+  bottomPad: number
+}) {
   const map = useMap()
   const pts = useMemo(
     () => (result ? result.segments.flatMap((s) => s.pts) : (preview?.flat() ?? [])),
@@ -24,13 +34,13 @@ function Fit({ pin, preview, result }: { pin: LatLon | null; preview: LatLon[][]
   useEffect(() => {
     const fit = () => {
       map.invalidateSize()
-      if (pts.length) map.fitBounds(pts, { padding: [30, 30] })
+      if (pts.length) map.fitBounds(pts, { paddingTopLeft: [30, 30], paddingBottomRight: [30, 30 + bottomPad] })
     }
     fit()
     const ro = new ResizeObserver(fit)
     ro.observe(map.getContainer())
     return () => ro.disconnect()
-  }, [map, pts])
+  }, [map, pts, bottomPad])
   // A moved pin recenters the map only if it left the view.
   useEffect(() => {
     if (pin && !map.getBounds().contains(pin)) map.setView(pin, Math.max(map.getZoom(), 14))
@@ -48,11 +58,16 @@ export default function MapView({
   onPin,
   preview,
   result,
+  area,
+  bottomPad,
 }: {
   pin: LatLon | null
   onPin: (p: LatLon) => void
   preview: LatLon[][] | null
   result: RouteResult | null
+  /** Search area corners, shown before a route exists. */
+  area: [LatLon, LatLon] | null
+  bottomPad: number
 }) {
   const all = result?.segments.flatMap((s) => s.pts)
   return (
@@ -61,8 +76,11 @@ export default function MapView({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url={TILES}
       />
-      <Fit pin={pin} preview={preview} result={result} />
+      <Fit pin={pin} preview={preview} result={result} bottomPad={bottomPad} />
       <Picker onPin={onPin} />
+      {!result && area && (
+        <Rectangle bounds={area} pathOptions={{ color: '#2fa7e0', weight: 2, dashArray: '6 6', fillOpacity: 0.05, interactive: false }} />
+      )}
       {!result &&
         preview?.map((pts, i) => (
           <Polyline key={i} positions={pts} pathOptions={{ color: '#2fa7e0', weight: 4, dashArray: '2 9', lineCap: 'round' }} />

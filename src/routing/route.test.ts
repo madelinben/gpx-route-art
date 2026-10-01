@@ -3,11 +3,11 @@ import { downsample, buildGpx, gpxFileName } from '../export/gpx'
 import { frame, rdp } from '../geo/geo'
 import type { LatLon, XY } from '../geo/geo'
 import { textStrokes } from '../canvas/hershey'
-import { route } from './astar'
+import { routeToAny } from './astar'
 import { buildGraph } from './graph'
 import type { OverpassElement } from './graph'
 import { prepare } from './pipeline'
-import { solve } from './solve'
+import { searchArea } from './solve'
 
 const f = frame(51.5, -0.1)
 
@@ -33,22 +33,27 @@ function grid(n: number): OverpassElement[] {
 
 test('graph keeps largest component; A* finds the Manhattan shortest path', () => {
   const g = buildGraph(grid(10), f.toXY)
-  expect(g.n).toBe(100)
+  expect(g.n).toBe(100) // the 2-node island is dropped
   const a = 0
   const b = g.n - 1
-  const p = route(g, a, b, { alpha: 0, spacing: 100 })!
+  const p = routeToAny(g, a, [{ n: b, pen: 0 }], { alpha: 0, spacing: 100 })!
   const len = p.slice(1).reduce((s, n, i) => s + Math.hypot(g.xy[2 * n] - g.xy[2 * p[i]], g.xy[2 * n + 1] - g.xy[2 * p[i] + 1]), 0)
   expect(len).toBeCloseTo(1800, 0) // 9 blocks right + 9 up
 })
 
-test('solver lands a square within tolerance on a synthetic grid', () => {
+test('area search returns in-tolerance variations, ranked per metric on a synthetic grid', () => {
   const g = buildGraph(grid(40), f.toXY)
   const square = [[{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 0 }]]
   const prep = prepare(square)!
-  const r = solve(g, prep, { targetM: 4000, tol: 0.1, center: [51.5, -0.1], budgetMs: 10_000 })!
-  expect(r.withinTol).toBe(true)
-  expect(Math.abs(r.lengthM - 4000) / 4000).toBeLessThanOrEqual(0.1)
-  expect(r.fidelity).toBeGreaterThan(0.5)
+  const res = searchArea(g, prep, { targetM: 4000, tol: 0.1, center: [51.5, -0.1], areaM: 2000, budgetMs: 10_000 })
+  expect(res.length).toBeGreaterThan(1)
+  for (const r of res) {
+    expect(r.errPct).toBeLessThanOrEqual(0.1)
+    expect(r.fidelity).toBeGreaterThan(0.3)
+    expect(r.clean).toBeGreaterThan(0.5)
+  }
+  const best = (k: (r: (typeof res)[number]) => number) => Math.max(...res.map(k))
+  expect(res[0].score).toBe(best((r) => r.score)) // sorted by overall score
 })
 
 test('prepare orders multi-stroke drawings and normalizes to a unit box', () => {

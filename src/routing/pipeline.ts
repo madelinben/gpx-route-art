@@ -107,6 +107,7 @@ function eraseSpurs(nodes: number[]) {
 }
 
 const K = 4 // candidate nodes per anchor
+const SNAP_RINGS = 4 // anchors must sit within ~400 m of a street, else the placement is rejected
 const SNAP_PEN = 2 // cost per meter an end node sits from its anchor
 
 /**
@@ -118,7 +119,7 @@ export function evaluate(g: Graph, prep: Prepared, W: number, theta: number, off
   const placed = place(prep.strokes, W, theta, off)
   const spacing = Math.min(SPACING.max, Math.max(SPACING.min, (polyLen(prep.strokes.flat()) * W) / SPACING.perStroke))
   const pieces: Piece[] = []
-  const cands = (a: XY) => nearestK(g, a, K).map(({ n, d }) => ({ n, pen: d * SNAP_PEN }))
+  const cands = (a: XY) => nearestK(g, a, K, SNAP_RINGS).map(({ n, d }) => ({ n, pen: d * SNAP_PEN }))
   let cur = -1
 
   for (const stroke of placed) {
