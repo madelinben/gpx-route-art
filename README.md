@@ -9,7 +9,7 @@ Two ways this repo ships, from the same `src/`:
 | Target | How |
 |---|---|
 | **GitHub Pages** (`madelinben.github.io/gpx-route-art/`) | `.github/workflows/pages.yml` builds `demo/` → `dist/client` (Pages source: GitHub Actions) |
-| **get-out-there** (Cloudflare) | imported as workspace package `@get-out-there/tool-route-art` (`RouteArtApp`, `./styles.css`) |
+| **get-out-there** (Cloudflare) | imported as workspace package `@get-out-there/route-art` (`RouteArtApp`, `./styles.css`) |
 
 ```bash
 pnpm install
