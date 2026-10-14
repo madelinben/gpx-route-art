@@ -11,12 +11,14 @@
   --green: #5cc326;
   --green-d: #3f9a14;
   --orange: #ff6b35;
-  --font: Nunito, ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  --font: Nunito, ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
 }
-.gpxa, .gpxa * {
+.gpxa,
+.gpxa * {
   box-sizing: border-box;
 }
-.gpxa, .gpxa {
+.gpxa,
+.gpxa {
   height: 100%;
   margin: 0;
   overflow: hidden;
@@ -33,21 +35,25 @@
   grid-template-rows: auto 1fr auto;
   gap: 8px;
   width: 100%;
-  max-width: 560px; 
+  max-width: 560px;
   margin: 0 auto;
   padding: calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + 10px)
     calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 10px);
 }
-.gpxa button, .gpxa select, .gpxa input {
+.gpxa button,
+.gpxa select,
+.gpxa input {
   font: inherit;
   color: inherit;
 }
-.gpxa .btn, .gpxa .seg button, .gpxa .stamp {
+.gpxa .btn,
+.gpxa .seg button,
+.gpxa .stamp {
   cursor: pointer;
   border: 2px solid var(--line);
   border-radius: 999px;
   padding: 0.55rem 1rem;
-  font-size: 1rem; 
+  font-size: 1rem;
   font-weight: 800;
   background: linear-gradient(#ffffff 0%, #f1f6fa 55%, #e3ecf3 100%);
   box-shadow:
@@ -59,17 +65,25 @@
     box-shadow 0.08s,
     filter 0.15s;
 }
-.gpxa .btn:hover:not(:disabled), .gpxa .stamp:hover {
+.gpxa .btn:hover:not(:disabled),
+.gpxa .stamp:hover {
   filter: brightness(1.04);
 }
-.gpxa .btn:active:not(:disabled), .gpxa .stamp:active, .gpxa .seg button:active {
+.gpxa .btn:active:not(:disabled),
+.gpxa .stamp:active,
+.gpxa .seg button:active {
   transform: translateY(3px);
   box-shadow:
     0 0 0 var(--shade),
     0 2px 4px rgba(43, 58, 70, 0.12),
     inset 0 1px 0 #fff;
 }
-.gpxa .btn:focus-visible, .gpxa .seg button:focus-visible, .gpxa .stamp:focus-visible, .gpxa input:focus-visible, .gpxa select:focus-visible, .gpxa summary:focus-visible {
+.gpxa .btn:focus-visible,
+.gpxa .seg button:focus-visible,
+.gpxa .stamp:focus-visible,
+.gpxa input:focus-visible,
+.gpxa select:focus-visible,
+.gpxa summary:focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 2px;
 }
@@ -81,7 +95,8 @@
   padding: 0.4rem 0.7rem;
   font-size: 0.95rem;
 }
-.gpxa .btn.blue, .gpxa .btn[aria-pressed='true'] {
+.gpxa .btn.blue,
+.gpxa .btn[aria-pressed="true"] {
   color: #fff;
   border-color: var(--blue-d);
   background: linear-gradient(#6fd0ff 0%, var(--blue) 55%, #1f93c9 100%);
@@ -148,7 +163,7 @@
   border-radius: 0 999px 999px 0;
   border-left-width: 0;
 }
-.gpxa .seg button[aria-pressed='true'] {
+.gpxa .seg button[aria-pressed="true"] {
   color: #fff;
   border-color: var(--blue-d);
   background: linear-gradient(#6fd0ff, var(--blue));
@@ -173,7 +188,8 @@
   display: grid;
   grid-template-rows: auto auto 1fr;
 }
-.gpxa .tools, .gpxa .stamps {
+.gpxa .tools,
+.gpxa .stamps {
   display: flex;
   gap: 6px;
   align-items: center;
@@ -184,8 +200,14 @@
   scrollbar-width: none;
   justify-content: safe center;
   gap: 4px;
-  
-  mask-image: linear-gradient(90deg, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
+
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 10px),
+    transparent 100%
+  );
 }
 .gpxa .stamps::-webkit-scrollbar {
   display: none;
@@ -193,13 +215,14 @@
 .gpxa .text {
   flex: 1;
   min-width: 0;
-  width: 0; 
+  width: 0;
 }
 .gpxa .tools .btn {
   white-space: nowrap;
 }
-.gpxa input, .gpxa select {
-  font-size: 1rem; 
+.gpxa input,
+.gpxa select {
+  font-size: 1rem;
   padding: 0.5rem 0.8rem;
   border: 2px solid var(--line);
   border-radius: 14px;
@@ -282,7 +305,7 @@
 .gpxa .sheet {
   position: absolute;
   inset: 0;
-  z-index: 1000; 
+  z-index: 1000;
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--bg);
@@ -330,7 +353,7 @@
   gap: 8px;
   align-items: center;
 }
-.gpxa .row input:not([type='range']) {
+.gpxa .row input:not([type="range"]) {
   flex: 1;
 }
 .gpxa .big {
@@ -343,7 +366,7 @@
   font-size: 1rem;
   color: var(--muted);
 }
-.gpxa input[type='range'] {
+.gpxa input[type="range"] {
   width: 100%;
   accent-color: var(--blue);
   height: 28px;
@@ -492,7 +515,10 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-.gpxa, .gpxa *, .gpxa *::before, .gpxa *::after {
+  .gpxa,
+  .gpxa *,
+  .gpxa *::before,
+  .gpxa *::after {
     animation: none !important;
     transition: none !important;
   }
@@ -502,7 +528,7 @@
   left: 8px;
   right: 8px;
   bottom: 8px;
-  z-index: 600; 
+  z-index: 600;
   background: rgba(255, 255, 255, 0.95);
   border: 2px solid var(--line);
   border-radius: 20px;
@@ -512,13 +538,15 @@
     0 8px 16px rgba(43, 58, 70, 0.2);
   animation: gpxa-slide-up 0.3s ease-out;
 }
-.gpxa .vtabs, .gpxa .vcards {
+.gpxa .vtabs,
+.gpxa .vcards {
   display: flex;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
 }
-.gpxa .vtabs::-webkit-scrollbar, .gpxa .vcards::-webkit-scrollbar {
+.gpxa .vtabs::-webkit-scrollbar,
+.gpxa .vcards::-webkit-scrollbar {
   display: none;
 }
 .gpxa .vtabs button {
@@ -532,7 +560,7 @@
   font-weight: 800;
   white-space: nowrap;
 }
-.gpxa .vtabs button[aria-selected='true'] {
+.gpxa .vtabs button[aria-selected="true"] {
   color: #fff;
   border-color: var(--blue-d);
   background: linear-gradient(#6fd0ff, var(--blue));
@@ -580,7 +608,7 @@
   font-weight: 900;
   color: var(--muted);
 }
-.gpxa .vcard[aria-pressed='true'] {
+.gpxa .vcard[aria-pressed="true"] {
   border-color: var(--blue);
   background: linear-gradient(#f4fbff, #dff2fc);
   box-shadow: 0 0 0 2px rgba(47, 167, 224, 0.35);
