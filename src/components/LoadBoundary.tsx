@@ -1,14 +1,14 @@
-import { Component } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
+import { Component } from "react";
 
 /** Catches a failed lazy chunk (flaky network, or a deploy that replaced old hashed files). */
 export class LoadBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
+  state = { failed: false };
   static getDerivedStateFromError() {
-    return { failed: true }
+    return { failed: true };
   }
   render() {
-    if (!this.state.failed) return this.props.children
+    if (!this.state.failed) return this.props.children;
     return (
       <div className="center">
         <div className="card">
@@ -18,6 +18,6 @@ export class LoadBoundary extends Component<{ children: ReactNode }, { failed: b
           </button>
         </div>
       </div>
-    )
+    );
   }
 }
