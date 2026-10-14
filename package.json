@@ -1,48 +1,38 @@
 {
-  "name": "gpx-route-art",
+  "name": "@get-out-there/tool-route-art",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "imports": {
-    "#/*": "./src/*"
+  "description": "Draw a shape, get a runnable GPX on real streets. Embedded in get-out-there; also deployed standalone to GitHub Pages from demo/.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
   },
   "scripts": {
-    "dev": "vite dev --port 3000",
-    "generate-routes": "tsr generate",
-    "build": "vite build && cp dist/client/index.html dist/client/404.html",
-    "preview": "vite preview",
-    "lint": "eslint",
-    "format": "prettier --write . && eslint --fix",
-    "check": "prettier --check .",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "dev": "vite --config demo/vite.config.ts",
+    "build": "vite build --config demo/vite.config.ts",
+    "ts-check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@tanstack/react-router": "1.170.41",
-    "@tanstack/react-start": "latest",
     "leaflet": "^1.9.4",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "react-leaflet": "^5.0.0"
   },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "devDependencies": {
-    "@tanstack/eslint-config": "0.4.0",
-    "@tanstack/router-cli": "^1.132.0",
     "@types/leaflet": "^1.9.22",
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^9.20.0",
-    "prettier": "^3.8.1",
-    "typescript": "^6.0.2",
-    "vite": "^8.0.0",
-    "vitest": "^5.0.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss"
-    ]
-  },
-  "packageManager": "pnpm@10.28.2"
+    "@types/node": "^20",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
+  }
 }

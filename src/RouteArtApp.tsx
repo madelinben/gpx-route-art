@@ -1,24 +1,22 @@
-import { createFileRoute } from '@tanstack/react-router'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { DrawCanvas } from '../components/DrawCanvas'
-import { LoadBoundary } from '../components/LoadBoundary'
-import type { Stroke } from '../canvas/drawing'
-import { textStrokes } from '../canvas/hershey'
-import { STAMPS } from '../canvas/shapes'
-import { buildGpx, canShareFiles, gpxFileName, shareOrDownload } from '../export/gpx'
-import type { LatLon } from '../geo/geo'
-import { frame } from '../geo/geo'
-import { searchPlaces } from '../osm/nominatim'
-import type { Place } from '../osm/nominatim'
-import { place, prepare } from '../routing/pipeline'
-import type { RouteResult } from '../routing/solve'
-import type { WorkerIn, WorkerOut } from '../worker/routeWorker'
-import { rank, Variations } from '../components/Variations'
-import type { MetricId } from '../components/Variations'
+import { DrawCanvas } from './components/DrawCanvas'
+import { LoadBoundary } from './components/LoadBoundary'
+import type { Stroke } from './canvas/drawing'
+import { textStrokes } from './canvas/hershey'
+import { STAMPS } from './canvas/shapes'
+import { buildGpx, canShareFiles, gpxFileName, shareOrDownload } from './export/gpx'
+import type { LatLon } from './geo/geo'
+import { frame } from './geo/geo'
+import { searchPlaces } from './osm/nominatim'
+import type { Place } from './osm/nominatim'
+import { place, prepare } from './routing/pipeline'
+import type { RouteResult } from './routing/solve'
+import type { WorkerIn, WorkerOut } from './worker/routeWorker'
+import { rank, Variations } from './components/Variations'
+import type { MetricId } from './components/Variations'
 
-const MapView = lazy(() => import('../components/MapView'))
+const MapView = lazy(() => import('./components/MapView'))
 
-export const Route = createFileRoute('/')({ component: App })
 
 const UNIT_M = { km: 1000, mi: 1609.344 }
 const MAX = { km: 25, mi: 15 }
@@ -28,7 +26,7 @@ const CONFETTI = ['🎉', '⭐', '✨', '🏃', '💥', '🎈', '🌟', '👟']
 
 type Busy = { msg: string; pct?: number }
 
-function App() {
+export function RouteArtApp({ embedded = false }: { embedded?: boolean }) {
   const [view, setView] = useState<'draw' | 'map'>('draw')
   const [sheet, setSheet] = useState(false)
   const [strokes, setStrokes] = useState<Stroke[]>([])
@@ -197,7 +195,7 @@ function App() {
     setVariations([])
     setBusy({ msg: 'Starting…' })
     // One worker for the whole session so downloaded map tiles stay cached between searches.
-    const w = (worker.current ??= new Worker(new URL('../worker/routeWorker.ts', import.meta.url), { type: 'module' }))
+    const w = (worker.current ??= new Worker(new URL('./worker/routeWorker.ts', import.meta.url), { type: 'module' }))
     let first = true
     w.onmessage = (ev: MessageEvent<WorkerOut>) => {
       const m = ev.data
@@ -233,6 +231,7 @@ function App() {
   const stars = result ? Math.max(1, Math.round(result.score / 20)) : 0
 
   return (
+    <div className={`gpxa${embedded ? " gpxa-embed" : ""}`}>
     <div className="screen">
       <header className="top">
         <div className="seg" role="group" aria-label="View">
@@ -576,6 +575,7 @@ function App() {
           )}
         </div>
       </footer>
+    </div>
     </div>
   )
 }

@@ -37,7 +37,7 @@ pnpm preview   # http://localhost:4173/gpx-route-art/
 - `vite.config.ts` sets `base: '/gpx-route-art/'` and `src/router.tsx` derives the router
   basepath from it. Rename the repo or use a custom domain → update `base` (use `/` for a
   custom domain).
-- `pnpm build` copies `index.html` to `404.html` so deep links (e.g. `/gpx-route-art/map`)
+- (legacy note) (e.g. `/gpx-route-art/map`)
   load the SPA on refresh.
 - The pnpm version comes from `packageManager` in `package.json`.
 
