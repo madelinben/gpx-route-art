@@ -98,7 +98,7 @@ export default function MapView({
         <Rectangle
           bounds={area}
           pathOptions={{
-            color: "#2fa7e0",
+            color: "#334155",
             weight: 2,
             dashArray: "6 6",
             fillOpacity: 0.05,
@@ -111,7 +111,7 @@ export default function MapView({
           <Polyline
             key={i}
             positions={pts}
-            pathOptions={{ color: "#2fa7e0", weight: 4, dashArray: "2 9", lineCap: "round" }}
+            pathOptions={{ color: "#334155", weight: 4, dashArray: "2 9", lineCap: "round" }}
           />
         ))}
       {result?.segments.map((s, i) => (
@@ -128,8 +128,8 @@ export default function MapView({
           positions={s.pts}
           pathOptions={
             s.transit
-              ? { color: "#2fa7e0", weight: 5, dashArray: "8 8" }
-              : { color: "#ff6b35", weight: 6, lineCap: "round", lineJoin: "round" }
+              ? { color: "#334155", weight: 5, dashArray: "8 8" }
+              : { color: "#f97316", weight: 6, lineCap: "round", lineJoin: "round" }
           }
         />
       ))}
