@@ -2,7 +2,13 @@ import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import { LoadBoundary } from "./components/LoadBoundary";
 import type { MetricId } from "./components/Variations";
 import { rank, Variations } from "./components/Variations";
-import { buildGpx, gpxFileName, shareOrDownload } from "./export/gpx";
+import {
+  type BeforeExport,
+  buildGpx,
+  gatedExport,
+  gpxFileName,
+  shareOrDownload,
+} from "./export/gpx";
 import type { LatLon } from "./geo/geo";
 import type { Place } from "./osm/nominatim";
 import { searchPlaces } from "./osm/nominatim";
@@ -16,7 +22,13 @@ const TOL = 0.1;
 
 type Busy = { msg: string; pct: number };
 
-export function PlannerApp({ embedded = false }: { embedded?: boolean }) {
+export function PlannerApp({
+  embedded = false,
+  beforeExport,
+}: {
+  embedded?: boolean;
+  beforeExport?: BeforeExport;
+}) {
   const [loc, setLoc] = useState<{ ll: LatLon; label: string } | null>(null);
   const [mode, setMode] = useState<Mode>("distance");
   const [km, setKm] = useState(5);
@@ -259,7 +271,11 @@ export function PlannerApp({ embedded = false }: { embedded?: boolean }) {
                 {gpx && (
                   <button
                     className="btn blue"
-                    onClick={() => shareOrDownload(gpx.xml, gpx.file, gpx.name, false)}
+                    onClick={() =>
+                      gatedExport(beforeExport, () =>
+                        shareOrDownload(gpx.xml, gpx.file, gpx.name, false)
+                      )
+                    }
                   >
                     ⬇ GPX
                   </button>

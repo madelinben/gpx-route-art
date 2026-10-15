@@ -6,7 +6,14 @@ import { DrawCanvas } from "./components/DrawCanvas";
 import { LoadBoundary } from "./components/LoadBoundary";
 import type { MetricId } from "./components/Variations";
 import { rank, Variations } from "./components/Variations";
-import { buildGpx, canShareFiles, gpxFileName, shareOrDownload } from "./export/gpx";
+import {
+  type BeforeExport,
+  buildGpx,
+  canShareFiles,
+  gatedExport,
+  gpxFileName,
+  shareOrDownload,
+} from "./export/gpx";
 import type { LatLon } from "./geo/geo";
 import { frame } from "./geo/geo";
 import type { Place } from "./osm/nominatim";
@@ -25,7 +32,13 @@ const CONFETTI = ["🎉", "⭐", "✨", "🏃", "💥", "🎈", "🌟", "👟"];
 
 type Busy = { msg: string; pct?: number };
 
-export function RouteArtApp({ embedded = false }: { embedded?: boolean }) {
+export function RouteArtApp({
+  embedded = false,
+  beforeExport,
+}: {
+  embedded?: boolean;
+  beforeExport?: BeforeExport;
+}) {
   const [view, setView] = useState<"draw" | "map">("draw");
   const [sheet, setSheet] = useState(false);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
@@ -593,7 +606,9 @@ export function RouteArtApp({ embedded = false }: { embedded?: boolean }) {
                 <button
                   className="btn blue grow"
                   onClick={() => {
-                    shareOrDownload(gpx.xml, gpx.file, gpx.name, false);
+                    gatedExport(beforeExport, () =>
+                      shareOrDownload(gpx.xml, gpx.file, gpx.name, false)
+                    );
                     setSheet(true);
                   }}
                 >
@@ -602,7 +617,11 @@ export function RouteArtApp({ embedded = false }: { embedded?: boolean }) {
                 {canShare && (
                   <button
                     className="btn"
-                    onClick={() => shareOrDownload(gpx.xml, gpx.file, gpx.name, true)}
+                    onClick={() =>
+                      gatedExport(beforeExport, () =>
+                        shareOrDownload(gpx.xml, gpx.file, gpx.name, true)
+                      )
+                    }
                   >
                     ⌚ Send
                   </button>
