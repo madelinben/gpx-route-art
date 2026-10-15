@@ -80,3 +80,16 @@ function download(file: File) {
 export const canShareFiles = () =>
   typeof navigator !== "undefined" &&
   canShareData({ files: [new File([""], "a.gpx", { type: "application/gpx+xml" })] });
+
+/** Host hook run before an export (e.g. an ad wall). Reject to cancel. */
+export type BeforeExport = (label: string) => Promise<void>;
+
+/** Runs the host's pre-export hook, then the export. A rejection (cancel) skips the export. */
+export async function gatedExport(before: BeforeExport | undefined, run: () => void) {
+  try {
+    await before?.("GPX");
+  } catch {
+    return;
+  }
+  run();
+}

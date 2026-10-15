@@ -1,3 +1,4 @@
+export type { BeforeExport } from "./export/gpx";
 export { PlannerApp } from "./PlannerApp";
 export { RouteArtApp } from "./RouteArtApp";
 

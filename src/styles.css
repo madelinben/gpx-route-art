@@ -1,17 +1,17 @@
 /* Scoped under .gpxa (generated once from the original global stylesheet). */
 .gpxa {
-  --bg: #f8fafc;
+  --bg: #e8f0f6;
   --panel: #ffffff;
-  --line: #e2e8f0;
-  --shade: #cbd5e1;
-  --text: #0f172a;
-  --muted: #64748b;
-  --blue: #ea580c;
-  --blue-d: #c2410c;
-  --green: #ea580c;
-  --green-d: #c2410c;
-  --orange: #f97316;
-  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --line: #d3dee8;
+  --shade: #bccbd7;
+  --text: #2b3a46;
+  --muted: #6b8092;
+  --blue: #2fa7e0;
+  --blue-d: #1b86b8;
+  --green: #5cc326;
+  --green-d: #3f9a14;
+  --orange: #ff6b35;
+  --font: Nunito, ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
 }
 .gpxa,
 .gpxa * {
@@ -26,7 +26,7 @@
   font-family: var(--font);
   font-weight: 700;
   color: var(--text);
-  background: radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--bg) 60%, #e2e8f0 100%);
+  background: radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--bg) 60%, #d3e2ee 100%);
 }
 .gpxa .screen {
   height: 100vh;
@@ -55,10 +55,10 @@
   padding: 0.55rem 1rem;
   font-size: 1rem;
   font-weight: 800;
-  background: linear-gradient(#ffffff 0%, #f1f5f9 55%, #e2e8f0 100%);
+  background: linear-gradient(#ffffff 0%, #f1f6fa 55%, #e3ecf3 100%);
   box-shadow:
     0 3px 0 var(--shade),
-    0 6px 10px rgba(15, 23, 42, 0.12),
+    0 6px 10px rgba(43, 58, 70, 0.12),
     inset 0 1px 0 #fff;
   transition:
     transform 0.08s,
@@ -75,7 +75,7 @@
   transform: translateY(3px);
   box-shadow:
     0 0 0 var(--shade),
-    0 2px 4px rgba(15, 23, 42, 0.12),
+    0 2px 4px rgba(43, 58, 70, 0.12),
     inset 0 1px 0 #fff;
 }
 .gpxa .btn:focus-visible,
@@ -99,20 +99,20 @@
 .gpxa .btn[aria-pressed="true"] {
   color: #fff;
   border-color: var(--blue-d);
-  background: linear-gradient(#fb923c 0%, var(--blue) 55%, #c2410c 100%);
+  background: linear-gradient(#6fd0ff 0%, var(--blue) 55%, #1f93c9 100%);
   box-shadow:
     0 3px 0 var(--blue-d),
-    0 6px 10px rgba(30, 41, 59, 0.35),
+    0 6px 10px rgba(27, 134, 184, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 .gpxa .btn.green {
   color: #fff;
   border-color: var(--green-d);
-  background: linear-gradient(#fb923c 0%, var(--green) 55%, #ea580c 100%);
+  background: linear-gradient(#9be36a 0%, var(--green) 55%, #47a81a 100%);
   box-shadow:
     0 3px 0 var(--green-d),
-    0 6px 10px rgba(194, 65, 12, 0.35),
+    0 6px 10px rgba(63, 154, 20, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
   font-size: 1.15rem;
@@ -120,7 +120,7 @@
 .gpxa .btn.green:disabled {
   color: var(--muted);
   border-color: var(--line);
-  background: linear-gradient(#fff, #e2e8f0);
+  background: linear-gradient(#fff, #e3ecf3);
   box-shadow: 0 3px 0 var(--shade);
   text-shadow: none;
 }
@@ -146,7 +146,7 @@
   border-radius: 999px;
   box-shadow:
     0 4px 0 var(--line),
-    0 8px 14px rgba(15, 23, 42, 0.1);
+    0 8px 14px rgba(43, 58, 70, 0.1);
 }
 .gpxa .seg {
   display: flex;
@@ -166,7 +166,7 @@
 .gpxa .seg button[aria-pressed="true"] {
   color: #fff;
   border-color: var(--blue-d);
-  background: linear-gradient(#fb923c, var(--blue));
+  background: linear-gradient(#6fd0ff, var(--blue));
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 .gpxa .top .btn {
@@ -178,10 +178,10 @@
   overflow: hidden;
   border-radius: 24px;
   border: 3px solid #fff;
-  background: #e2e8f0;
+  background: #dbe6ee;
   box-shadow:
     0 0 0 2px var(--line),
-    0 8px 18px rgba(15, 23, 42, 0.16);
+    0 8px 18px rgba(43, 58, 70, 0.16);
 }
 .gpxa .draw {
   height: 100%;
@@ -244,8 +244,8 @@
   overflow: hidden;
   margin: 8px;
   border-radius: 20px;
-  background: linear-gradient(#cbd5e1, #cbd5e1);
-  box-shadow: inset 0 3px 8px rgba(15, 23, 42, 0.25);
+  background: linear-gradient(#cddbe6, #b9cad8);
+  box-shadow: inset 0 3px 8px rgba(43, 58, 70, 0.25);
 }
 .gpxa canvas {
   display: block;
@@ -293,7 +293,7 @@
   border: 2px solid var(--line);
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 4px 10px rgba(43, 58, 70, 0.2);
   font-size: 0.9rem;
   animation: gpxa-bob 1.8s ease-in-out infinite;
 }
@@ -441,7 +441,7 @@
   text-shadow: 0 1px 0 #d98e00;
 }
 .gpxa .stars .dim {
-  color: #e2e8f0;
+  color: #d3dee8;
   text-shadow: none;
 }
 .gpxa .chips {
@@ -451,7 +451,7 @@
   margin-top: 6px;
 }
 .gpxa .chip {
-  background: #f1f5f9;
+  background: #eef5fa;
   border: 1.5px solid var(--line);
   border-radius: 999px;
   padding: 2px 8px;
@@ -475,12 +475,12 @@
   display: grid;
   place-items: center;
   font-weight: 800;
-  box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.15);
+  box-shadow: inset 0 2px 4px rgba(43, 58, 70, 0.15);
 }
 .gpxa .bar-fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: repeating-linear-gradient(-45deg, #fb923c 0 12px, #f97316 12px 24px);
+  background: repeating-linear-gradient(-45deg, #9be36a 0 12px, #7fd24a 12px 24px);
   background-size: 34px 34px;
   transition: width 0.25s;
   animation: gpxa-stripes 0.8s linear infinite;
@@ -535,7 +535,7 @@
   padding: 6px;
   box-shadow:
     0 4px 0 var(--line),
-    0 8px 16px rgba(15, 23, 42, 0.2);
+    0 8px 16px rgba(43, 58, 70, 0.2);
   animation: gpxa-slide-up 0.3s ease-out;
 }
 .gpxa .vtabs,
@@ -563,7 +563,7 @@
 .gpxa .vtabs button[aria-selected="true"] {
   color: #fff;
   border-color: var(--blue-d);
-  background: linear-gradient(#fb923c, var(--blue));
+  background: linear-gradient(#6fd0ff, var(--blue));
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 .gpxa .vtabs .vtoggle {
@@ -585,7 +585,7 @@
   padding: 4px 2px 4px;
   border: 2px solid var(--line);
   border-radius: 16px;
-  background: linear-gradient(#fff, #f1f5f9);
+  background: linear-gradient(#fff, #f1f6fa);
   font-family: inherit;
   color: inherit;
 }
@@ -610,8 +610,8 @@
 }
 .gpxa .vcard[aria-pressed="true"] {
   border-color: var(--blue);
-  background: linear-gradient(#f8fafc, #e2e8f0);
-  box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.35);
+  background: linear-gradient(#f4fbff, #dff2fc);
+  box-shadow: 0 0 0 2px rgba(47, 167, 224, 0.35);
 }
 
 /* when mounted inside another page the host controls height */
