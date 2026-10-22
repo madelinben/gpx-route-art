@@ -32,6 +32,7 @@
   height: 100vh;
   height: var(--app-h, 100dvh);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   gap: 8px;
   width: 100%;
@@ -137,6 +138,7 @@
 }
 .gpxa .top {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
@@ -171,6 +173,19 @@
 }
 .gpxa .top .btn {
   padding: 0.5rem 0.9rem;
+}
+/* phones: let the header wrap and the toggle buttons shrink so nothing is wider than the screen */
+.gpxa .top h1 {
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .gpxa .top {
+    border-radius: 24px;
+    justify-content: center;
+  }
+  .gpxa .seg button {
+    padding: 0.5rem 0.65rem;
+  }
 }
 .gpxa .stage {
   position: relative;
