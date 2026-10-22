@@ -303,10 +303,12 @@
   top: 12px;
   transform: translateX(-50%);
   z-index: 500;
-  white-space: nowrap;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  text-align: center;
   background: #fff;
   border: 2px solid var(--line);
-  border-radius: 999px;
+  border-radius: 18px;
   padding: 0.4rem 0.9rem;
   box-shadow: 0 4px 10px rgba(43, 58, 70, 0.2);
   font-size: 0.9rem;
@@ -365,11 +367,19 @@
 }
 .gpxa .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
 .gpxa .row input:not([type="range"]) {
   flex: 1;
+  min-width: 0;
+}
+/* the search form is a nested row: let it take the remaining width, or wrap below on phones */
+.gpxa .row > form.row {
+  flex: 1 1 14rem;
+  min-width: 0;
+  flex-wrap: nowrap;
 }
 .gpxa .big {
   font-size: 2.2rem;
